@@ -19,6 +19,7 @@ using System.Reflection;
 using Gtk;
 using Silk.NET.OpenGL;
 using Silk.NET.Core.Loader;
+using Silk.NET.Core.Contexts;
 
 namespace Uno.UI.Runtime.Skia
 {
@@ -39,6 +40,8 @@ namespace Uno.UI.Runtime.Skia
 
 		private float? _dpi = 1;
 		private GRContext? _grContext;
+		private readonly DefaultNativeContext _glContext;
+		private readonly DefaultNativeContext _eglContext;
 		private GL _gl;
 		private GRBackendRenderTarget? _renderTarget;
 		private SKSurface? _surface;
@@ -64,7 +67,9 @@ namespace Uno.UI.Runtime.Skia
 			AutoRender = true;
 			SetRequiredVersion(3, 3);
 
-			_gl = new GL(new Silk.NET.Core.Contexts.DefaultNativeContext(new GLCoreLibraryNameContainer().GetLibraryName()));
+			_glContext = new DefaultNativeContext(new GLESCoreLibraryNameContainer().GetLibraryName());
+			_eglContext = new DefaultNativeContext(new EGLCoreLibraryNameContainer().GetLibraryName());
+			_gl = new GL(_glContext);
 		}
 
 		private void GLRenderSurface_Realized(object? sender, EventArgs e)
@@ -79,8 +84,22 @@ namespace Uno.UI.Runtime.Skia
 			// create the contexts if not done already
 			if (_grContext == null)
 			{
-				var glInterface = GRGlInterface.Create();
+				var glInterface = GRGlInterface.CreateGles(n =>
+				{
+					if (_glContext.TryGetProcAddress(n, out var glAddress))
+					{
+						return glAddress;
+					}
+					else if (_eglContext.TryGetProcAddress(n, out var eglAddress))
+					{
+						return eglAddress;
+					}
+
+					return (nint)0;
+				});
 				_grContext = GRContext.CreateGl(glInterface);
+
+				var v = _gl.GetStringS(GLEnum.Version);
 			}
 
 			// manage the drawing surface
@@ -183,6 +202,48 @@ namespace Uno.UI.Runtime.Skia
 
 			/// <inheritdoc />
 			public override string Windows86 => "opengl32.dll";
+		}
+
+		internal class GLESCoreLibraryNameContainer : SearchPathContainer
+		{
+			/// <inheritdoc />
+			public override string Linux => "libGLESv2.so";
+
+			/// <inheritdoc />
+			public override string MacOS => "/System/Library/Frameworks/OpenGLES.framework/OpenGLES";
+
+			/// <inheritdoc />
+			public override string Android => "libGLESv2.so";
+
+			/// <inheritdoc />
+			public override string IOS => "/System/Library/Frameworks/OpenGLES.framework/OpenGLES";
+
+			/// <inheritdoc />
+			public override string Windows64 => "libGLESv2.dll";
+
+			/// <inheritdoc />
+			public override string Windows86 => "libGLESv2.dll";
+		}
+
+		internal class EGLCoreLibraryNameContainer : SearchPathContainer
+		{
+			/// <inheritdoc />
+			public override string Linux => "libEGL.so";
+
+			/// <inheritdoc />
+			public override string MacOS => "/System/Library/Frameworks/OpenGLES.framework/OpenGLES";
+
+			/// <inheritdoc />
+			public override string Android => "libGLESv2.so";
+
+			/// <inheritdoc />
+			public override string IOS => "/System/Library/Frameworks/OpenGLES.framework/OpenGLES";
+
+			/// <inheritdoc />
+			public override string Windows64 => "libGLESv2.dll";
+
+			/// <inheritdoc />
+			public override string Windows86 => "libGLESv2.dll";
 		}
 	}
 }
