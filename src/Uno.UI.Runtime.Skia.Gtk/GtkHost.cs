@@ -200,7 +200,7 @@ namespace Uno.UI.Runtime.Skia
 			Gtk.Application.Run();
 		}
 
-		private void Current_Activated(object sender, WindowActivatedEventArgs e)
+		private void Current_Activated(object sender, object e)
 		{
 			var xamlRoot = CoreServices.Instance
 				.ContentRootCoordinator?

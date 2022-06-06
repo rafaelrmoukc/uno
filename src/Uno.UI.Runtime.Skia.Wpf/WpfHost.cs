@@ -150,7 +150,7 @@ namespace Uno.UI.Skia.Platform
 			Loaded += WpfHost_Loaded;
 		}
 
-		private void Current_Activated(object sender, WindowActivatedEventArgs e)
+		private void Current_Activated(object sender, object e)
 		{
 			var xamlRoot = CoreServices.Instance
 				.ContentRootCoordinator?
@@ -366,4 +366,3 @@ namespace Uno.UI.Skia.Platform
 		WpfCanvas? IWpfHost.NativeOverlayLayer => NativeOverlayLayer;
 	}
 }
-DesktopWindowXamlSource
