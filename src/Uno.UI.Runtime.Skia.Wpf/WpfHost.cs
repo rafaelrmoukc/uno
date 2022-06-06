@@ -366,3 +366,4 @@ namespace Uno.UI.Skia.Platform
 		WpfCanvas? IWpfHost.NativeOverlayLayer => NativeOverlayLayer;
 	}
 }
+DesktopWindowXamlSource
