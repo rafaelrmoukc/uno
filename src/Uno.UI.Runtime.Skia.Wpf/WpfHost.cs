@@ -129,6 +129,8 @@ namespace Uno.UI.Skia.Platform
 		
 		public WpfHost(global::System.Windows.Threading.Dispatcher dispatcher, Func<WinUI.Application> appBuilder)
 		{
+			FocusVisualStyle = null;
+
 			_current = this;
 			_appBuilder = appBuilder;
 
@@ -137,8 +139,7 @@ namespace Uno.UI.Skia.Platform
 			Windows.UI.Core.CoreDispatcher.DispatchOverride = d => dispatcher.BeginInvoke(d);
 			Windows.UI.Core.CoreDispatcher.HasThreadAccessOverride = dispatcher.CheckAccess;
 			_renderer = new UnoWpfRenderer(this);
-			_hostPointerHandler = new HostPointerHandler(this);			
-			WinUI.Window.Current.Activated += Current_Activated;
+			_hostPointerHandler = new HostPointerHandler(this);						
 
 			WpfApplication.Current.Activated += Current_Activated;
 			WpfApplication.Current.Deactivated += Current_Deactivated;
@@ -153,15 +154,17 @@ namespace Uno.UI.Skia.Platform
 			}
 
 			SizeChanged += WpfHost_SizeChanged;
-			Loaded += WpfHost_Loaded;			
+			Loaded += WpfHost_Loaded;
+
+			CoreServices.Instance.ContentRootCoordinator.CoreWindowContentRootSet += OnCoreWindowContentRootSet;
 		}
 
-		private void Current_Activated(object sender, object e)
+		private void OnCoreWindowContentRootSet(object? sender, object e)
 		{
 			var xamlRoot = CoreServices.Instance
-				.ContentRootCoordinator?
+				.ContentRootCoordinator
 				.CoreWindowContentRoot?
-				.XamlRoot;
+				.GetOrCreateXamlRoot();
 
 			if (xamlRoot is null)
 			{
@@ -169,11 +172,8 @@ namespace Uno.UI.Skia.Platform
 			}
 
 			xamlRoot.InvalidateRender += InvalidateRender;
-			XamlRootMap.Register(xamlRoot, this);
 
-			// Force initial render
-			InvalidateRender();
-			WinUI.Window.Current.Activated -= Current_Activated;
+			CoreServices.Instance.ContentRootCoordinator.CoreWindowContentRootSet -= OnCoreWindowContentRootSet;
 		}
 
 		private void InvalidateRender()
@@ -260,6 +260,12 @@ namespace Uno.UI.Skia.Platform
 		private void WpfHost_Loaded(object sender, RoutedEventArgs e)
 		{
 			WinUI.Window.Current.OnNativeSizeChanged(new Windows.Foundation.Size(ActualWidth, ActualHeight));
+
+			// Avoid dotted border on focus.
+			if (Parent is WpfControl control)
+			{
+				control.FocusVisualStyle = null;
+			}				
 		}
 
 		private void WpfHost_SizeChanged(object sender, SizeChangedEventArgs e)
