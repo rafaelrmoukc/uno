@@ -14,6 +14,12 @@ namespace Uno.UI
 {
 	public static class FeatureConfiguration
 	{
+		public static class Asd
+		{
+			public const string SanityTimestamp = "12T18";
+			public static bool EnableFix = false;
+		}
+
 		public static class ApiInformation
 		{
 			/// <summary>

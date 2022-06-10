@@ -1020,6 +1020,7 @@ namespace Windows.UI.Xaml.Controls
 					}
 
 					ItemsPanelRoot.Children.Clear();
+					if (Uno.UI.FeatureConfiguration.Asd.EnableFix)
 					FrameworkElementHelper.SetUseMeasurePathDisabled(ItemsPanelRoot, invalidate: false);
 
 					// Fall-through and materialize the call collection.
